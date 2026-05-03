@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(uuid())
+  username    String   @unique
+  password    String
+  role        Role     @default(STUDENT)
+  name        String
+  avatar      String?
+  bio         String?
+  
+  // Student specific
+  msv         String?  @unique
+  
+  // Teacher specific
+  mgv         String?  @unique
+  department  String?
+  subject     String?
+
+  socialLinks Json? // Storing { facebook, instagram, gmail }
+  
+  // Nitro features
+  nameColor     String?
+  nameEffect    String?
+  isOnline      Boolean  @default(false)
+  lastSeen      DateTime @default(now())
+  themeGradient String?
+  bannerUrl     String?
+  bannerType    String?  @default("IMAGE") // IMAGE or VIDEO
+  avatarFrame   String?  // URL of the frame image
+  
+  // Relations
+  memberships     ClubMember[]
+  announcements   Announcement[]
+  feedbacks       Feedback[]
+  posts           Post[]
+  postLikes       PostLike[]
+  comments        Comment[]
+  commentLikes    CommentLike[]
+  messages        Message[]
+  chats           ChatParticipant[]
+  ownedClubs      Club[] @relation("ClubOwner")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+}
+
+model Club {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  isPrivate   Boolean  @default(false)
+  
+  members     ClubMember[]
+  posts       Post[]
+  chats       Chat[]
+
+  ownerId     String?
+  owner       User?     @relation("ClubOwner", fields: [ownerId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClubMember {
+  id        String   @id @default(uuid())
+  userId    String
+  clubId    String
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  date      DateTime @default(now())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  images    String[] // Array of image URLs
+  files     Json?    // Array of objects { name, url, size, type }
+  links     Json?    // Array of objects { title, url }
+}
+
+model News {
+  id        String   @id @default(uuid())
+  title     String
+  image     String?
+  date      DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  studentId String
+  rating    Int
+  comment   String
+  date      DateTime @default(now())
+  
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id            String   @id @default(uuid())
+  content       String
+  date          DateTime @default(now())
+  images        String[] // array of strings
+  visibility    String   @default("PUBLIC")
+  feeling       String?
+  taggedUserIds String[] // array of user IDs
+  files         String[] // array of document URLs (PDF, Word, etc.)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  clubId    String?
+  club      Club?    @relation(fields: [clubId], references: [id], onDelete: SetNull)
+
+  likes     PostLike[]
+  comments  Comment[]
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  date      DateTime @default(now())
+  
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId  String?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  likes     CommentLike[]
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  title     String
+  type      String
+  uploader  String   
+  date      String
+  size      String
+  url       String?
+}
+
+enum ChatType {
+  PRIVATE
+  GROUP
+}
+
+model Chat {
+  id          String   @id @default(uuid())
+  type        ChatType
+  name        String?  // For group chats
+  
+  clubId      String?  @unique
+  club        Club?    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  lastMessage String?
+  time        String?  
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  participants ChatParticipant[]
+  messages     Message[]
+}
+
+model ChatParticipant {
+  id        String   @id @default(uuid())
+  chatId    String
+  userId    String
+
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  time      String?
+  isEmoji   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  isDeleted Boolean  @default(false)
+  replyToId String?
+  replyTo   Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies   Message[] @relation("MessageReplies")
+  likes     String[] // User IDs who liked/reacted
+
+  imageUrl  String?
+  fileUrl   String?
+  fileName  String?
+  audioUrl  String?
+}
