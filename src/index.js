@@ -37,6 +37,7 @@ app.use('/api/posts', require('./routes/posts.routes'));
 app.use('/api/clubs', require('./routes/clubs.routes'));
 app.use('/api/chats', require('./routes/chats.routes'));
 app.use('/api/misc', require('./routes/misc.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // Start server
 app.listen(PORT, () => {

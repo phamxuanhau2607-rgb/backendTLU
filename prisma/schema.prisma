@@ -111,6 +111,7 @@ model Feedback {
   studentId String
   rating    Int
   comment   String
+  images    String[] // Thêm trường này để lưu mảng các link ảnh
   date      DateTime @default(now())
   
   student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
