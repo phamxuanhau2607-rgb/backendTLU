@@ -53,13 +53,13 @@ router.get('/feedbacks', async (req, res) => {
 
 router.post('/feedbacks', async (req, res) => {
   try {
-    const { rating, comment, studentId, images } = req.body;
-    console.log('Received feedback data:', { rating, comment, studentId, imagesCount: images?.length });
+    const { rating, comment, userId, images } = req.body;
+    console.log('Received feedback data:', { rating, comment, userId, imagesCount: images?.length });
     const fb = await prisma.feedback.create({
       data: { 
         rating, 
         comment, 
-        studentId,
+        studentId: userId,
         images: images || []
       }
     });
