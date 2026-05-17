@@ -243,3 +243,10 @@ model Message {
   fileName  String?
   audioUrl  String?
 }
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt
+}
+

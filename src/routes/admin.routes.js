@@ -140,6 +140,49 @@ router.delete('/feedbacks/:id', async (req, res) => {
   }
 });
 
+router.post('/feedbacks', async (req, res) => {
+  try {
+    const { studentId, rating, comment, images } = req.body;
+    const fb = await prisma.feedback.create({
+      data: {
+        studentId,
+        rating: parseInt(rating),
+        comment,
+        images: images || []
+      },
+      include: {
+        student: { select: { name: true, msv: true, avatar: true } }
+      }
+    });
+    res.json(fb);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.put('/feedbacks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, comment, images } = req.body;
+    const fb = await prisma.feedback.update({
+      where: { id },
+      data: {
+        rating: parseInt(rating),
+        comment,
+        images: images || []
+      },
+      include: {
+        student: { select: { name: true, msv: true, avatar: true } }
+      }
+    });
+    res.json(fb);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 // --- QUẢN LÝ CÂU LẠC BỘ (CLUBS) ---
 router.get('/clubs', async (req, res) => {
   try {
@@ -196,6 +239,42 @@ router.get('/documents', async (req, res) => {
     });
     res.json(docs);
   } catch (error) {
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+// --- QUẢN LÝ CÀI ĐẶT HỆ THỐNG (SETTINGS) ---
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await prisma.setting.findMany();
+    const settingsObj = {};
+    settings.forEach(s => {
+      settingsObj[s.key] = s.value;
+    });
+    res.json(settingsObj);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.post('/settings', async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    // Update or create each setting
+    const operations = Object.entries(settings).map(([key, value]) => {
+      return prisma.setting.upsert({
+        where: { key },
+        update: { value: String(value) },
+        create: { key, value: String(value) }
+      });
+    });
+
+    await prisma.$transaction(operations);
+    
+    res.json({ message: 'Lưu cài đặt thành công' });
+  } catch (error) {
+    console.error('Save settings error:', error);
     res.status(500).json({ message: 'Lỗi server' });
   }
 });
