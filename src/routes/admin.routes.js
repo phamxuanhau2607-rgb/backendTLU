@@ -79,6 +79,43 @@ router.get('/users', async (req, res) => {
   }
 });
 
+router.post('/users', async (req, res) => {
+  try {
+    const { name, username, password, role, msv, mgv, avatar } = req.body;
+    const user = await prisma.user.create({
+      data: { name, username, password, role, msv, mgv, avatar }
+    });
+    res.json(user);
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.put('/users/:id', async (req, res) => {
+  try {
+    const { name, role, msv, mgv, avatar } = req.body;
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { name, role, msv, mgv, avatar }
+    });
+    res.json(user);
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.delete('/users/:id', async (req, res) => {
+  try {
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Xóa thành công' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 // --- QUẢN LÝ BÀI ĐĂNG (CỘNG ĐỒNG) ---
 router.get('/posts', async (req, res) => {
   try {
@@ -198,6 +235,33 @@ router.get('/clubs', async (req, res) => {
   }
 });
 
+router.post('/clubs', async (req, res) => {
+  try {
+    const { name, description, isPrivate, ownerId, avatar } = req.body;
+    const club = await prisma.club.create({
+      data: { name, description, isPrivate, ownerId, avatar },
+      include: {
+        owner: { select: { name: true, avatar: true } },
+        _count: { select: { members: true, posts: true } }
+      }
+    });
+    res.json(club);
+  } catch (error) {
+    console.error('Create club error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.delete('/clubs/:id', async (req, res) => {
+  try {
+    await prisma.club.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Xóa thành công' });
+  } catch (error) {
+    console.error('Delete club error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 // --- QUẢN LÝ THÔNG BÁO (ANNOUNCEMENTS) ---
 router.get('/announcements', async (req, res) => {
   try {
@@ -231,6 +295,16 @@ router.post('/announcements', async (req, res) => {
   }
 });
 
+router.delete('/announcements/:id', async (req, res) => {
+  try {
+    await prisma.announcement.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Xóa thành công' });
+  } catch (error) {
+    console.error('Delete announcement error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 // --- QUẢN LÝ TÀI LIỆU (DOCUMENTS) ---
 router.get('/documents', async (req, res) => {
   try {
@@ -239,6 +313,29 @@ router.get('/documents', async (req, res) => {
     });
     res.json(docs);
   } catch (error) {
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.post('/documents', async (req, res) => {
+  try {
+    const { title, type, uploader, date, size, url } = req.body;
+    const doc = await prisma.document.create({
+      data: { title, type, uploader, date, size, url }
+    });
+    res.json(doc);
+  } catch (error) {
+    console.error('Create document error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+router.delete('/documents/:id', async (req, res) => {
+  try {
+    await prisma.document.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Xóa thành công' });
+  } catch (error) {
+    console.error('Delete document error:', error);
     res.status(500).json({ message: 'Lỗi server' });
   }
 });
