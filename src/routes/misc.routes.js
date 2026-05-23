@@ -41,6 +41,19 @@ router.post('/announcements', async (req, res) => {
   }
 });
 
+router.delete('/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.announcement.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'Đã thu hồi thông báo' });
+  } catch (error) {
+    console.error('Lỗi khi xóa thông báo:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 // --- FEEDBACKS ---
 router.get('/feedbacks', async (req, res) => {
   try {
