@@ -186,6 +186,27 @@ router.get('/posts', async (req, res) => {
   }
 });
 
+router.post('/posts', async (req, res) => {
+  try {
+    const { content, authorId, images } = req.body;
+    const post = await prisma.post.create({
+      data: {
+        content,
+        authorId,
+        images: images || [],
+        visibility: 'PUBLIC'
+      },
+      include: {
+        author: { select: { name: true, avatar: true, msv: true, role: true } }
+      }
+    });
+    res.json(post);
+  } catch (error) {
+    console.error('Create post error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
 router.delete('/posts/:id', async (req, res) => {
   try {
     const { id } = req.params;

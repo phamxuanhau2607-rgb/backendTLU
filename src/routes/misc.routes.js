@@ -130,7 +130,7 @@ router.post('/reels/:id/like', async (req, res) => {
 router.get('/notifications/poll', async (req, res) => {
   try {
     const { lastCheck, userId } = req.query;
-    if (!lastCheck) return res.json({ newAnnouncements: [], newFeedbacks: [] });
+    if (!lastCheck) return res.json({ newAnnouncements: [], newFeedbacks: [], newClubs: [], newPosts: [] });
 
     const date = new Date(lastCheck);
     
@@ -140,18 +140,31 @@ router.get('/notifications/poll', async (req, res) => {
     });
 
     const fbWhere = { date: { gt: date } };
-    // Nếu có userId, chỉ lấy phản ánh của người đó (tùy theo logic nghiệp vụ)
-    // Nhưng vì Web Admin đăng phản ánh (hoặc phản hồi) thì nó có thể được gán studentId
     if (userId) {
       fbWhere.studentId = userId;
     }
-    
     const newFeedbacks = await prisma.feedback.findMany({
       where: fbWhere,
       orderBy: { date: 'desc' }
     });
 
-    res.json({ newAnnouncements, newFeedbacks });
+    // Thêm kiểm tra Câu lạc bộ mới
+    const newClubs = await prisma.club.findMany({
+      where: { createdAt: { gt: date } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Thêm kiểm tra Bài viết mới từ Admin (Giáo viên)
+    const newPosts = await prisma.post.findMany({
+      where: { 
+        date: { gt: date },
+        author: { role: 'TEACHER' } // Chỉ lấy bài do Admin/Giáo viên đăng
+      },
+      orderBy: { date: 'desc' },
+      include: { author: { select: { name: true } } }
+    });
+
+    res.json({ newAnnouncements, newFeedbacks, newClubs, newPosts });
   } catch (error) {
     console.error('Lỗi poll notifications:', error);
     res.status(500).json({ message: 'Lỗi server' });
