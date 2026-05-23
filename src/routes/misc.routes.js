@@ -126,7 +126,10 @@ router.post('/reels/:id/like', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server' });
-  // --- NOTIFICATIONS POLL ---
+  }
+});
+
+// --- NOTIFICATIONS POLL ---
 router.get('/notifications/poll', async (req, res) => {
   try {
     const { lastCheck, userId } = req.query;
