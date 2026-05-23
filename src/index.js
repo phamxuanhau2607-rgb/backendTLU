@@ -38,6 +38,11 @@ app.use('/api/clubs', require('./routes/clubs.routes'));
 app.use('/api/chats', require('./routes/chats.routes'));
 app.use('/api/misc', require('./routes/misc.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/upload', require('./routes/upload.routes'));
+
+// Phục vụ thư mục uploads như một static folder
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Start server
 app.listen(PORT, () => {
