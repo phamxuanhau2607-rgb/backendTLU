@@ -126,6 +126,35 @@ router.post('/reels/:id/like', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server' });
+  // --- NOTIFICATIONS POLL ---
+router.get('/notifications/poll', async (req, res) => {
+  try {
+    const { lastCheck, userId } = req.query;
+    if (!lastCheck) return res.json({ newAnnouncements: [], newFeedbacks: [] });
+
+    const date = new Date(lastCheck);
+    
+    const newAnnouncements = await prisma.announcement.findMany({
+      where: { date: { gt: date } },
+      orderBy: { date: 'desc' }
+    });
+
+    const fbWhere = { date: { gt: date } };
+    // Nếu có userId, chỉ lấy phản ánh của người đó (tùy theo logic nghiệp vụ)
+    // Nhưng vì Web Admin đăng phản ánh (hoặc phản hồi) thì nó có thể được gán studentId
+    if (userId) {
+      fbWhere.studentId = userId;
+    }
+    
+    const newFeedbacks = await prisma.feedback.findMany({
+      where: fbWhere,
+      orderBy: { date: 'desc' }
+    });
+
+    res.json({ newAnnouncements, newFeedbacks });
+  } catch (error) {
+    console.error('Lỗi poll notifications:', error);
+    res.status(500).json({ message: 'Lỗi server' });
   }
 });
 

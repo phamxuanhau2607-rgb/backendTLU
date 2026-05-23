@@ -10,11 +10,25 @@ router.get('/stats', async (req, res) => {
     const totalFeedbacks = await prisma.feedback.count();
     const totalClubs = await prisma.club.count();
 
+    // Lấy số phản ánh mới trong 24h qua
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const recentFeedbacksCount = await prisma.feedback.count({
+      where: { date: { gte: yesterday } }
+    });
+
+    const activeClubs = await prisma.club.count({
+      where: { _count: { posts: { gt: 0 } } }
+    });
+
     res.json({
       totalUsers,
       totalPosts,
       totalFeedbacks,
-      totalClubs
+      totalClubs,
+      recentFeedbacks: recentFeedbacksCount,
+      activeClubs: activeClubs
     });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server' });
@@ -53,6 +67,42 @@ router.get('/chart-data', async (req, res) => {
     res.json(chartData);
   } catch (error) {
     console.error('Chart data error:', error);
+    res.status(500).json({ message: 'Lỗi server' });
+  }
+});
+
+// --- LƯU TRỮ (STORAGE) ---
+router.get('/storage', async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({ select: { images: true, files: true } });
+    const feedbacks = await prisma.feedback.findMany({ select: { images: true } });
+    const docs = await prisma.document.count();
+
+    let imageCount = 0;
+    posts.forEach(p => {
+      if (p.images) imageCount += p.images.length;
+    });
+    feedbacks.forEach(f => {
+      if (f.images) imageCount += f.images.length;
+    });
+
+    // Giả định trung bình 1 ảnh = 2MB, 1 tài liệu = 5MB
+    const imageStorageMB = imageCount * 2;
+    const docStorageMB = docs * 5;
+
+    res.json({
+      images: {
+        count: imageCount,
+        usedMB: imageStorageMB,
+        totalMB: 5000 // 5GB limit
+      },
+      documents: {
+        count: docs,
+        usedMB: docStorageMB,
+        totalMB: 15000 // 15GB limit
+      }
+    });
+  } catch (error) {
     res.status(500).json({ message: 'Lỗi server' });
   }
 });
