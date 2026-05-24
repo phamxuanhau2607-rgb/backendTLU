@@ -155,12 +155,8 @@ router.get('/notifications/poll', async (req, res) => {
       orderBy: { date: 'desc' }
     });
 
-    const fbWhere = { date: { gt: date } };
-    if (userId) {
-      fbWhere.studentId = userId;
-    }
     const newFeedbacks = await prisma.feedback.findMany({
-      where: fbWhere,
+      where: { date: { gt: date } },
       orderBy: { date: 'desc' }
     });
 
@@ -180,7 +176,13 @@ router.get('/notifications/poll', async (req, res) => {
       include: { author: { select: { name: true } } }
     });
 
-    res.json({ newAnnouncements, newFeedbacks, newClubs, newPosts });
+    // Thêm kiểm tra Tài liệu mới
+    const newDocuments = await prisma.document.findMany({
+      where: { date: { gt: date } },
+      orderBy: { date: 'desc' }
+    });
+
+    res.json({ newAnnouncements, newFeedbacks, newClubs, newPosts, newDocuments });
   } catch (error) {
     console.error('Lỗi poll notifications:', error);
     res.status(500).json({ message: 'Lỗi server' });
